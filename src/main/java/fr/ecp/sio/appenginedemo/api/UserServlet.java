@@ -140,10 +140,25 @@ public class UserServlet extends JsonServlet {
 
     @Override
     protected String doPut(HttpServletRequest req) throws ServletException, IOException, ApiException, FileUploadException {
-        User user = getUser(req);
-        byte[] avatar = IOUtils.toByteArray(req.getInputStream());
-        String urlAvatar = Upload.UploadFile(avatar);
-        return urlAvatar;
+        // Get the user as below
+        User targetUser = getUser(req);
+        // Not found?
+        if (targetUser == null)
+            throw new ApiException(400, "invalidRequest", "User not found");
+
+        User currentUser = getAuthenticatedUser(req);
+        // Not found?
+        if(currentUser == null)
+            throw new ApiException(400, "invalidRequest", "User is not authenticated");
+
+        // Security checks
+        if(currentUser.id == targetUser.id) {
+            byte[] avatar = IOUtils.toByteArray(req.getInputStream());
+            String urlAvatar = Upload.UploadFile(avatar);
+            return urlAvatar;
+        }
+        else
+            throw new ApiException(400, "invalidRequest", "Permission denied !");
     }
 
     //get user Id from URL
